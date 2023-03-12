@@ -51,6 +51,8 @@ struct State {
     mode: GameMode,
     frame_time: f32,
     player: Player,
+    obstacle:Obstacle,
+    score:i32,
 }
 
 impl State {
@@ -59,6 +61,8 @@ impl State {
             mode: GameMode::Menu,
             player: Player::new(5, 25),
             frame_time: 0.0,
+            obstacle:Obstacle::new(SCREEN_WIDTH, 0),
+            score: 0,
         }
     }
 
@@ -95,18 +99,26 @@ impl State {
             self.player.flap();
         }
 
-        if self.player.y > SCREEN_HEIGHT {
-            self.mode = GameMode::End;
-        }
-
         self.player.render(ctx);
         // self.player.gravity_and_move();
-        ctx.print(0, 0, "Press SPace to Flap")
+        ctx.print(0, 0, "Press SPace to Flap");
+        ctx.print(0,1,&format!("Score: {}",self.score));
+        self.obstacle.render(ctx, self.player.x);
+        if self.player.x >self.obstacle.x{
+            self.score += 1;
+            self.obstacle = Obstacle::new(self.player.x+SCREEN_WIDTH, self.score);
+        }
+
+        if self.player.y > SCREEN_HEIGHT || self.obstacle.hit_obstacle(&self.player){
+            self.mode = GameMode::End;
+        }
         // self.mode = GameMode::End;
     }
 
     fn dead(&mut self, ctx: &mut BTerm) {
-        self.mode = GameMode::Menu;
+        ctx.cls();
+        ctx.print_centered( 5,"You are dead");
+        ctx.print_centered(6, format!("You earned {} points",self.score));
     }
 }
 
@@ -136,7 +148,7 @@ impl Obstacle {
         Obstacle {
             x,
             gap_y: random.range(10, 40),
-            size: i32::max(0, score),
+            size: i32::max(2, score),
         }
     }
 
@@ -155,8 +167,8 @@ impl Obstacle {
         // 获取空隙的一半
         let half_size = self.size /2;
         let dose_x_match = self.x == player.x;
-        let player_above_gap = player.y <= (self.gap_y - half_size);
-        let player_blow_gap = player.y >= (self.gap_y + half_size);
+        let player_above_gap = player.y < (self.gap_y - half_size);
+        let player_blow_gap = player.y > (self.gap_y + half_size);
         dose_x_match && (player_above_gap||player_blow_gap)
     }
     
