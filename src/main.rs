@@ -1,3 +1,5 @@
+use std::collections::btree_map::Keys;
+
 use bracket_lib::prelude::*;
 
 const SCREEN_WIDTH: i32 = 80;
@@ -69,7 +71,9 @@ impl State {
     fn restart(&mut self) {
         self.player = Player::new(5, 25);
         self.frame_time = 0.0;
+        self.score = 0;
         self.mode = GameMode::Playing;
+        self.obstacle = Obstacle::new(SCREEN_WIDTH, 0);
     }
 
     fn main_menu(&mut self, ctx: &mut BTerm) {
@@ -119,6 +123,15 @@ impl State {
         ctx.cls();
         ctx.print_centered( 5,"You are dead");
         ctx.print_centered(6, format!("You earned {} points",self.score));
+        ctx.print_centered(8, "(P)Play Again");
+        ctx.print_centered(9, "(Q) Quit Game");
+        if let Some(key) = ctx.key {
+            match key {
+                VirtualKeyCode::P=>self.restart(),
+                VirtualKeyCode::Q => ctx.quitting = true,
+                _=>{},
+            }
+        }
     }
 }
 
